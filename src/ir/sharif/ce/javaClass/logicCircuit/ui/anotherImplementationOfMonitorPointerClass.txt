@@ -1,0 +1,68 @@
+class MonitorPointsRunner implements Runnable {
+		Color drawingColor = Color.GREEN;
+		int maxNumberOfPoints;
+		int pointsDrawed = 0;
+		final int duration;// milli
+
+		public MonitorPointsRunner(int maxNumberOfPoints, int duringTime) {
+			super();
+			this.maxNumberOfPoints = maxNumberOfPoints;
+			this.duration = duringTime;
+		}
+
+		private void drawGraph(Graphics g) {
+			// int[] xT = new int[0];
+			// int[] yT = new int[0];
+			int justNow =(int) (System.currentTimeMillis()-Window.startTime);
+			int startIndexOfPointsToDraw = 0;
+			if (pointsDrawed > maxNumberOfPoints) {
+				startIndexOfPointsToDraw = pointsDrawed - maxNumberOfPoints;
+			}
+
+			g.setColor(this.drawingColor);
+			int x1,x2,y1,y2;
+			for (int i = 1; i < getPoints().getXS().size(); i++) {
+				if (justNow < this.duration + getPoints().getXS().get(i - 1)) {
+					x1 = (int)((getPoints().getX(i - 1)+this.duration-justNow)*getWidth()/this.duration);
+					y1 = getPoints().getY(i - 1);
+					x2 =  (int)((getPoints().getX(i)+this.duration-justNow)*getWidth()/this.duration);
+					y2 = getPoints().getY(i);
+					g.drawLine(x1, y1, x2, y2);
+				}
+			}
+
+			this.pointsDrawed++;
+			// g.drawPolyline((int[])(getPoints().xS.toArray(xT)),
+			// (Integer[])(getPoints().yS.toArray(yt)), getPoints());
+		}
+
+		public void run() {
+			setPoints(new Points(maxNumberOfPoints));
+			int yt;
+			while (true) {
+				if (getMonitoredWire().getValue()) {
+					yt = getHeight() / 4 + getHeight() / 6;
+				} else {
+					yt = getHeight() * 3 / 4 + getHeight() / 6;
+				}
+
+				if (false && (getPoints().getYS().size() > maxNumberOfPoints - 1 || getPoints()
+						.getXS().size() > maxNumberOfPoints - 1)) {
+					getPoints().getXS().remove(0);
+					getPoints().getYS().remove(0);
+				}
+
+				Monitor.this.points
+						.addPoint(
+								(int) ((System.currentTimeMillis() - Window.startTime)),
+								yt);
+				try {
+					Monitor.this.pointsThread.sleep(SleepTime.getSleepTime());
+				} catch (InterruptedException e) {
+					System.out.println("CATCHED EXCEPTION!!!");
+					e.printStackTrace();
+				}
+			}
+
+		}
+	}
